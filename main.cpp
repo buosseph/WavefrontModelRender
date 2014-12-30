@@ -5,6 +5,8 @@
 #include <vector>
 #include <stdlib.h>
 
+#include "vertex.h"
+
 using namespace std;
 
 enum Input {
@@ -14,7 +16,7 @@ enum Input {
 	Object	= (int)'o',
 };
 
-vector<double> vertices;
+// vector<Vertex> vertices;
 
 void parseComment(string line) {
 	cout << line << '\n';
