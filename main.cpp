@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
+#include <vector>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -9,23 +12,71 @@ enum Input {
 	Vertex	= (int)'v',
 	Face	= (int)'f',
 	Object	= (int)'o',
-
 };
+
+vector<double> vertices;
 
 void parseComment(string line) {
 	cout << line << '\n';
 }
 
 void parseVertex(string line) {
-	cout << line << '\n';
+	vector<double> tokens;
+	size_t found = line.find(' ');
+	if (found != string::npos) {
+		string values = line.substr(found);
+		size_t lastPos = found;
+		for (int i = lastPos; i < line.length(); i++) {
+			if (values[i] == ' ' || values[i] == '\0') {
+				string value = values.substr(lastPos, i);
+				lastPos = i;
+				tokens.push_back(atof(value.c_str()));
+			}
+		}
+	}
+
+	cout << "Vertex: { ";
+	for (int i = 0; i < 3; i++) {
+		cout << tokens[i];
+		if (i != 2) {
+			cout << ", ";
+		}
+	}
+	cout << " };" << endl;
 }
 
 void parseFace(string line) {
-	cout << line << '\n';
+	vector<int> tokens;
+	size_t found = line.find(' ');
+	if (found != string::npos) {
+		string values = line.substr(found);
+		size_t lastPos = found;
+		for (int i = lastPos; i < line.length(); i++) {
+			if (values[i] == ' ' || values[i] == '\0') {
+				string value = values.substr(lastPos, i);
+				lastPos = i;
+				tokens.push_back(atoi(value.c_str()));
+			}
+		}
+	}
+
+	cout << "Face: { ";
+	for (int i = 0; i < tokens.size(); i++) {
+		cout << tokens[i];
+		if (i != tokens.size() - 1) {
+			cout << ", ";
+		}
+	}
+	cout << " };" << endl;
 }
 
 void parseObject(string line) {
-	cout << line << '\n';
+	string name;
+	size_t found = line.find(' ');
+	if (found != string::npos) {
+		name = line.substr(found + 1);
+	}
+	cout << name << ": " << endl;
 }
 
 void parseFile(ifstream& file) {
