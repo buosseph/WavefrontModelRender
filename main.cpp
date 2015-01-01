@@ -169,26 +169,36 @@ bool saveScene(char* filename, int width, int height, float* buffer, char* title
 	fp = fopen(filename, "wb");
 	if (fp == NULL) {
 		fprintf(stderr, "Could not open %s for writing\n", filename);
+
+		fclose(fp);
 		return false;
 	}
 
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 	if (png_ptr == NULL) {
 		fprintf(stderr, "Could not allocate write struct\n");
-		// cleanup
+
+		png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+		fclose(fp);
 		return false;
 	}
 
 	info_ptr = png_create_info_struct(png_ptr);
 	if (info_ptr == NULL) {
 		fprintf(stderr, "Could not allocate info struct\n");
-		// cleanup
+
+		png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+		png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+		fclose(fp);
 		return false;
 	}
 
 	if (setjmp(png_jmpbuf(png_ptr))) {
 		fprintf(stderr, "Error during png creation\n");
-		// cleanup
+
+		png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+		png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+		fclose(fp);
 		return false;
 	}
 
@@ -221,11 +231,18 @@ bool saveScene(char* filename, int width, int height, float* buffer, char* title
 
 	png_write_end(png_ptr, NULL);
 
-	// cleanup
-	if (fp != NULL) fclose(fp);
-	if (info_ptr != NULL) png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
-	if (png_ptr != NULL) png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
-	if (row != NULL) free(row);
+	if (fp != NULL) {
+		fclose(fp);
+	}
+	if (info_ptr != NULL) {
+		png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+	}
+	if (png_ptr != NULL) {
+		png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+	}
+	if (row != NULL) {
+		free(row);
+	}
 
 	return true;
 }
