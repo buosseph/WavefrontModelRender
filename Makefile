@@ -1,10 +1,16 @@
-CC=g++
-CFLAGS=-c -Wall
-SOURCES=*.cpp
-OBJECTS=$(Sources:.cpp=.o)
-EXECUTABLE=main
+# g++ *.cpp -o main -lpng
 
-all: $(SOURCES) $(EXECUTABLE)
+CC				= g++
+CXX_CFLAGS		= -c -Wall
+LIBS			= -lpng
+SOURCES 		= *.cpp
+OBJECTS 		= $(Sources:.cpp=.o)
+EXECUTABLE		= main
+
+all: $(EXECUTABLE)
+
+$(EXECUTABLE): $(SOURCES)
+	$(CC) $(SOURCES) -o $(EXECUTABLE) $(LIBS)
 
 clean:
-	rm -rf *o main
+	rm -rf *o main *png
