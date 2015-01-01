@@ -1,20 +1,19 @@
+#include <iostream>
+#include <string>
+
 #include "vertex.h"
 
-Vertex::Vertex(double x, double y, double z) {
-	x = x;
-	y = y;
-	z = z;
-}
+void print(vertex& v) {
+	std::string start 	= "Vector { ";
+	std::string comma 	= ", ";
+	std::string end 	= " }\n";
 
-Vertex::Vertex(std::vector<double>& v) {
-	if (v.size() != 3) {
-		std::cerr
-			<< "Vector of incorrect length provided for vertex constructor"
-			<< std::endl;
-	}
-	x = v[0];
-	y = v[1];
-	z = v[2];
+	std::cout
+		<< start
+		<< v.x
+		<< comma
+		<< v.y
+		<< comma
+		<< v.z
+		<< end;
 }
-
-Vertex::~Vertex() {}

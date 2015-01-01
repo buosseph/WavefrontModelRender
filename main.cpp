@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <png.h>
 
-// #include "vertex.h"
+#include "vertex.h"
 
 using namespace std;
 
@@ -17,7 +17,7 @@ enum Input {
 	Object	= (int)'o',
 };
 
-// vector<Vertex> vertices;
+vector<vertex> vertices;
 
 void parseComment(string line) {
 	cout << line << '\n';
@@ -38,14 +38,13 @@ void parseVertex(string line) {
 		}
 	}
 
-	cout << "Vertex: { ";
-	for (int i = 0; i < 3; i++) {
-		cout << tokens[i];
-		if (i != 2) {
-			cout << ", ";
-		}
-	}
-	cout << " };" << endl;
+	vertex v;
+	v.x = tokens[0];
+	v.y = tokens[1];
+	v.z = tokens[2];
+	// print(v);
+
+	vertices.push_back(v);
 }
 
 void parseFace(string line) {
@@ -256,6 +255,10 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 	openFile(argv[1]);
+
+	for (int i = 0; i < vertices.size(); i++) {
+		print(vertices[i]);
+	}
 
 	char* filename = "output.png";
 	int width = 4;
