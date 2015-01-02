@@ -159,6 +159,6 @@ int main(int argc, char** argv) {
 	string filename(argv[1]);
 	const char* title = ("Model Render: " + filename).c_str();
 
-	init(title, argc, argv);
-	return 0;	
+	int status = init(title);
+	return status;	
 }

@@ -1,60 +1,44 @@
-#ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
-#include <GLUT/glut.h>
-#else
-#ifdef _WIN32
-#include <windows.h>
-#endif
-#include <GL/gl.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
-#endif
+#include <stdlib.h>
+#include <stdio.h>
 
-void display(void) {
-	//clear white, draw with black
-	glClearColor(0, 0, 0, 1);
-	glColor3d(0, 0, 0);
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>	// Window & keyboard, contains OpenGL
+#include <glm/glm.hpp>	// 3D math
+using namespace glm;
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+int init(const char* title) {
+	if (!glfwInit()) {
+		fprintf(stderr, "Failed to initialize GLFW\n");
+		return -1;
+	}
 
-	//this draws a square using vertices
-	// glBegin(GL_QUADS);
-	// glVertex2i(0, 0);
-	// glVertex2i(0, 128);
-	// glVertex2i(128, 128);
-	// glVertex2i(128, 0);
-	// glEnd();
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);	// Want OpenGL 3.3
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);	// For MacOSX
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	//a more useful helper
-	// glRecti(200, 200, 250, 250);
+	GLFWwindow* window;
+	window = glfwCreateWindow(640, 480, title, NULL, NULL);
+	if (window == NULL) {
+		fprintf(stderr, "Failed to open GLFW window.  If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
+		glfwTerminate();
+		return -1;
+	}
 
-	glutSwapBuffers();
-}
+	glfwMakeContextCurrent(window);
+	glewExperimental = true;	// Needed in core profile
+	if (glewInit() != GLEW_OK) {
+		fprintf(stderr, "Failed to initialize GLEW\n");
+		return -1;
+	}
 
-void reshape(int width, int height) {
-	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	//set the coordinate system, with the origin in the top left
-	gluOrtho2D(0, width, height, 0);	// or (0,width,0,hieght)?
-	glMatrixMode(GL_MODELVIEW);
-}
-
-void idle(void) {
-	glutPostRedisplay();
-}
-
-void init(const char* title, int argc, char** argv) {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(640, 480);
-	glutCreateWindow(title);
-
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
-	glutIdleFunc(idle);
-
-	glutMainLoop();
+	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+	do {
+		// draw
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	} while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS
+		&& glfwWindowShouldClose(window) == 0);
+	return 0;
 }
