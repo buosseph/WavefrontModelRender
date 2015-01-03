@@ -48,7 +48,8 @@ void parseFace(string line) {
 				if (values[i] == ' ' || values[i] == '\0') {
 					string value = values.substr(lastPos, i);
 					lastPos = i;
-					faces.push_back(atoi(value.c_str()));
+					faces.push_back(atoi(value.c_str()) - 1);
+						// vertices are 1-indexed in file
 				}
 			}			
 		}
@@ -60,7 +61,8 @@ void parseFace(string line) {
 				if (values[i] == ' ' || values[i] == '\0') {
 					string value = values.substr(lastPos, i);
 					lastPos = i;
-					tokens.push_back(atoi(value.c_str()));
+					tokens.push_back(atoi(value.c_str()) - 1);
+						// vertices are 1-indexed in file
 				}
 			}
 
