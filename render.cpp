@@ -8,11 +8,12 @@
 #include <stdio.h>
 #include <string>
 #include <iostream>
+#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>	// Window & keyboard, contains OpenGL
 
-#include <glm/glm.hpp>	// 3D math
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -35,7 +36,7 @@ const GLchar* fragmentSource =
 	"   outColor = vec4(0.0, 0.5, 1.0, 1.0);"
 	"}";
 
-int init(const char* title) {
+int render(const char* title, uint numVertices, float* vertices, uint numFaces, int* faces) {
 	if (!glfwInit()) {
 		fprintf(stderr, "Failed to initialize GLFW\n");
 		return -1;
@@ -69,33 +70,16 @@ int init(const char* title) {
 
 
 	// VBOs
-	GLuint pyramid_vbo;
-	glGenBuffers(1, &pyramid_vbo);
-	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, 0.5f,
-		-0.5f, -0.5f, 0.5f,
-
-		0.f, 0.5f, 0.f
-	};
-	glBindBuffer(GL_ARRAY_BUFFER, pyramid_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	GLuint model_vbo;
+	glGenBuffers(1, &model_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, model_vbo);
+	glBufferData(GL_ARRAY_BUFFER, numVertices * sizeof(float), vertices, GL_STATIC_DRAW);
 
 	// Elements
-	GLuint pyramid_ebo;
-	glGenBuffers(1, &pyramid_ebo);
-	GLuint elements[] = {
-		0, 1, 2,
-		2, 3, 0,
-
-		0, 1, 4,
-		1, 2, 4,
-		2, 3, 4,
-		3, 0, 4,
-	};
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pyramid_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+	GLuint model_ebo;
+	glGenBuffers(1, &model_ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, model_ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numFaces * sizeof(int), faces, GL_STATIC_DRAW);
 
 
 	// Vertex Shader
@@ -159,7 +143,7 @@ int init(const char* title) {
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 
 		// draw element(s)
-		glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, numFaces, GL_UNSIGNED_INT, 0);
 
 		// swap buffers
 		glfwSwapBuffers(window);
@@ -173,8 +157,8 @@ int init(const char* title) {
 	glDeleteShader(fragmentShader);
 	glDeleteShader(vertexShader);
 
-	glDeleteBuffers(1, &pyramid_ebo);
-	glDeleteBuffers(1, &pyramid_vbo);
+	glDeleteBuffers(1, &model_ebo);
+	glDeleteBuffers(1, &model_vbo);
 
 	glDeleteVertexArrays(1, &vao);
 

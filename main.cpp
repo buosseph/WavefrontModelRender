@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 #include "render.h"
-#include "vertex.h"
 
 using namespace std;
 
@@ -17,14 +16,14 @@ enum Input {
 	Object	= (int)'o',
 };
 
-vector<vertex> vertices;
+vector<float> vertices;
+vector<int> faces;
 
 void parseComment(string line) {
 	cout << line << '\n';
 }
 
 void parseVertex(string line) {
-	vector<double> tokens;
 	size_t found = line.find(' ');
 	if (found != string::npos) {
 		string values = line.substr(found);
@@ -33,43 +32,51 @@ void parseVertex(string line) {
 			if (values[i] == ' ' || values[i] == '\0') {
 				string value = values.substr(lastPos, i);
 				lastPos = i;
-				tokens.push_back(atof(value.c_str()));
+				vertices.push_back(atof(value.c_str()));
 			}
 		}
 	}
-
-	vertex v;
-	v.x = tokens[0];
-	v.y = tokens[1];
-	v.z = tokens[2];
-	// print(v);
-
-	vertices.push_back(v);
 }
 
 void parseFace(string line) {
-	vector<int> tokens;
 	size_t found = line.find(' ');
 	if (found != string::npos) {
 		string values = line.substr(found);
 		size_t lastPos = found;
-		for (int i = lastPos; i < line.length(); i++) {
-			if (values[i] == ' ' || values[i] == '\0') {
-				string value = values.substr(lastPos, i);
-				lastPos = i;
-				tokens.push_back(atoi(value.c_str()));
+		if (lastPos == 3) {
+			for (int i = lastPos; i < line.length(); i++) {
+				if (values[i] == ' ' || values[i] == '\0') {
+					string value = values.substr(lastPos, i);
+					lastPos = i;
+					faces.push_back(atoi(value.c_str()));
+				}
+			}			
+		}
+		else {
+			// Could remove unnecessary vector and iteration
+
+			vector<int> tokens;
+			for (int i = lastPos; i < line.length(); i++) {
+				if (values[i] == ' ' || values[i] == '\0') {
+					string value = values.substr(lastPos, i);
+					lastPos = i;
+					tokens.push_back(atoi(value.c_str()));
+				}
+			}
+
+			for (int i = 2; i < tokens.size(); i++) {
+				faces.push_back(tokens[0]);
+				faces.push_back(tokens[i-1]);
+				faces.push_back(tokens[i]);
+
+				// cout << "Face: { "
+				// 	<< tokens[0] << ", "
+				// 	<< tokens[i-1] << ", "
+				// 	<< tokens[i] << " };"
+				// 	<< endl;
 			}
 		}
 	}
-
-	cout << "Face: { ";
-	for (int i = 0; i < tokens.size(); i++) {
-		cout << tokens[i];
-		if (i != tokens.size() - 1) {
-			cout << ", ";
-		}
-	}
-	cout << " };" << endl;
 }
 
 void parseObject(string line) {
@@ -152,13 +159,9 @@ int main(int argc, char** argv) {
 	}
 	openFile(argv[1]);
 
-	for (int i = 0; i < vertices.size(); i++) {
-		print(vertices[i]);
-	}
-
 	string filename(argv[1]);
 	const char* title = ("Model Render: " + filename).c_str();
 
-	int status = init(title);
+	int status = render(title, vertices.size(), &vertices[0], faces.size(), &faces[0]);
 	return status;	
 }
