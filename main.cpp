@@ -159,7 +159,10 @@ int main(int argc, char** argv) {
 			<< endl;
 		return -1;
 	}
-	openFile(argv[1]);
+	bool opened = openFile(argv[1]);
+	if (!opened) {
+		return -1;
+	}
 
 	string filename(argv[1]);
 	const char* title = ("Model Render: " + filename).c_str();

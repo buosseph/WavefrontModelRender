@@ -2,7 +2,7 @@
 # See http://www.glfw.org/docs/latest/build.html#build_link_osx for all dependencies for glfw3
 
 CC				= clang++
-CXX_CFLAGS		= -c -Wall
+CXX_CFLAGS		= -c -Wall -std=c++11 -stdlib=libc++
 LIBS			= -framework opengl -lglew -framework cocoa -lglfw3 -framework IOKit -framework CoreVideo
 SOURCES 		= *.cpp
 OBJECTS 		= $(Sources:.cpp=.o)

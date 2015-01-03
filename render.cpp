@@ -31,10 +31,20 @@ const GLchar* vertexSource =
 
 const GLchar* fragmentSource =
 	"#version 150 core\n"
+	// "in vec3 normal;"
 	"out vec4 outColor;"
 	"void main() {"
 	"   outColor = vec4(0.0, 0.5, 1.0, 1.0);"
+	// "	vec3 lightColor = vec4(1.0, 1.0, 1.0);"
+	// "	float cosTheta = clamp(dot(normal, 1), 0, 1);"
+	// "	outColor = surfaceColor * lightColor * cosTheta;"
 	"}";
+
+struct  DirectionalLight {
+	glm::vec3 color;
+	glm::vec3 direction;
+	float ambientIntensity;
+} sunlight;
 
 int render(const char* title, uint numVertices, float* vertices, uint numFaces, int* faces) {
 	if (!glfwInit()) {
@@ -82,6 +92,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numFaces * sizeof(int), faces, GL_STATIC_DRAW);
 
 
+
 	// Vertex Shader
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
@@ -104,6 +115,36 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(posAttrib);
+
+
+	// // Generate & Link Normals
+	// GLuint normals_vbo;
+	// glGenBuffers(1, &normals_vbo);
+	// glBindBuffer(GL_ARRAY_BUFFER, normals_vbo);
+	// std::vector<glm::vec3> normals;
+	// for (int i = 0; i < faces.size(); i += 3) {
+	// 	glm::vec3 normal = glm::cross(
+	// 		vertices[faces[i+1]] - vertices[faces[i]],
+	// 		vertices[faces[i+2]] - vertices[faces[i]]
+	// 	).gml::normalize();
+	// 	normals.push_back(normal);
+	// }
+	// glBufferData(GL_ARRAY_BUFFER, normals.size * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+	// GLint normalsAttrib = glGetAttribLocation(shaderProgram, "normal");
+	// glVertexAttribPointer(normalsAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	// glEnableVertexAttribArray(normalsAttrib);
+
+
+	// Face Culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	// // Directional Light
+	// sunlight.color = glm::vec3(1.f, 1.f, 1.f);
+	// sunlight.direction = glm::vec3(0.f, -1.f, 0.f);
+	// sunlight.ambientIntensity = 0.2f;
+	// GLuint uniSunlight = glGetUniformLocation(shaderProgram, "sunlight");
+	// glUniformMatrix4fv(uniSunlight, 1, GL_FALSE, glm::value_ptr(sunlight));
 
 
 	// Model View Projection
