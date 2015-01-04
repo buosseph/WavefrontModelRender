@@ -73,11 +73,12 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 		return -1;
 	}
 
+
+
 	// VAO
 	GLuint vao;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-
 
 	// VBOs
 	GLuint model_vbo;
@@ -134,6 +135,8 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// glVertexAttribPointer(normalsAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	// glEnableVertexAttribArray(normalsAttrib);
 
+	// Background Color
+	glClearColor(0.f, 0.f, 0.f, 1.f);
 
 	// Face Culling
 	glEnable(GL_CULL_FACE);
@@ -147,8 +150,9 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// glUniformMatrix4fv(uniSunlight, 1, GL_FALSE, glm::value_ptr(sunlight));
 
 
+
 	// Model View Projection
-	// View
+	// View (Constant)
 	glm::mat4 view = glm::lookAt(
 		glm::vec3(0.f, 1.2f, 3.f),		// camera position
 		glm::vec3(0.f, 0.f, 0.f),		// target
@@ -157,7 +161,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	GLuint uniView = glGetUniformLocation(shaderProgram, "view");
 	glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
 
-	// Projection
+	// Projection (Constant)
 	glm::mat4 proj = glm::perspective(
 		45.f,			// Field of View (in degrees)
 		4.f / 3.f,		// Aspect ratio
@@ -167,10 +171,10 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
+
+
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	do {
-		// screen clear
-		glClearColor(0.f, 0.f, 0.f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Model transforms
@@ -193,7 +197,10 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 		&& glfwWindowShouldClose(window) == 0);
 
 
+
 	// Deallocate
+	glDisableVertexAttribArray(posAttrib);
+
 	glDeleteProgram(shaderProgram);
 	glDeleteShader(fragmentShader);
 	glDeleteShader(vertexShader);
