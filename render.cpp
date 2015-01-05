@@ -2,6 +2,7 @@
  * - https://open.gl/ (provides source code)
  * - http://www.opengl-tutorial.org/ (some bits don't work or just aren't explained well)
  * - http://mbsoftworks.sk/index.php?page=tutorials&series=1 (Haven't looked at it much, but has some cool topics)
+ * - https://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/index.php (to understand shaders and GLSL)
  */
 
 #include <stdlib.h>
@@ -25,7 +26,9 @@ const GLchar* vertexSource =
 	"uniform mat4 model;"
 	"uniform mat4 view;"
 	"uniform mat4 proj;"
+	// "varying vec4 vertexColor;"
 	"void main() {"
+	// "	vertexColor = gl_Color;"
 	"   gl_Position = proj * view * model * vec4(position, 1.0);"
 	"}";
 
@@ -33,8 +36,10 @@ const GLchar* fragmentSource =
 	"#version 150 core\n"
 	// "in vec3 normal;"
 	"out vec4 outColor;"
+	// "varying vec4 vertexColor;"
 	"void main() {"
 	"   outColor = vec4(0.0, 0.5, 1.0, 1.0);"
+	// "	outColor = vertexColor;"
 	// "	vec3 lightColor = vec4(1.0, 1.0, 1.0);"
 	// "	float cosTheta = clamp(dot(normal, 1), 0, 1);"
 	// "	outColor = surfaceColor * lightColor * cosTheta;"
@@ -104,12 +109,54 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 	glCompileShader(fragmentShader);
 
-	// Link Vertex and Fragment Shaders into Program
+	// Check Shader Complilation
+	GLint compiled;
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		fprintf(stderr, "Failed to compile vertex shader\n");
+
+		glDeleteShader(vertexShader);
+		glDeleteBuffers(1, &model_ebo);
+		glDeleteBuffers(1, &model_vbo);
+		glDeleteVertexArrays(1, &vao);
+
+		return -1;
+	}
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &compiled);
+	if (!compiled) {
+		fprintf(stderr, "Failed to compile fragment shader\n");
+
+		glDeleteShader(fragmentShader);
+		glDeleteShader(vertexShader);
+		glDeleteBuffers(1, &model_ebo);
+		glDeleteBuffers(1, &model_vbo);
+		glDeleteVertexArrays(1, &vao);
+
+		return -1;
+	}
+
+	// Link Shaders to Program
 	GLuint shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
 	glBindFragDataLocation(shaderProgram, 0, "outColor");
 	glLinkProgram(shaderProgram);
+
+	// Confirm Linking and Use Program
+	GLint linked;
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linked);
+	if (!linked) {
+		fprintf(stderr, "Failed to link shaders\n");
+
+		glDeleteProgram(shaderProgram);
+		glDeleteShader(fragmentShader);
+		glDeleteShader(vertexShader);
+		glDeleteBuffers(1, &model_ebo);
+		glDeleteBuffers(1, &model_vbo);
+		glDeleteVertexArrays(1, &vao);
+
+		return -1;
+	}
 	glUseProgram(shaderProgram);
 
 	// Specify Layout of Vertex Data
