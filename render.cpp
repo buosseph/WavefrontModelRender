@@ -2,7 +2,7 @@
  * - https://open.gl/ (provides source code)
  * - http://www.opengl-tutorial.org/ (some bits don't work or just aren't explained well)
  * - http://mbsoftworks.sk/index.php?page=tutorials&series=1 (Haven't looked at it much, but has some cool topics)
- * - https://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/index.php (to understand shaders and GLSL)
+ * - https://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/index.php (to understand shaders and GLSL, but some of the syntax is out of date)
  */
 
 #include <stdlib.h>
@@ -21,28 +21,25 @@
 using namespace glm;
 
 const GLchar* vertexSource =
-	"#version 150 core\n"
+	"#version 330 core\n"
 	"in vec3 position;"
 	"uniform mat4 model;"
 	"uniform mat4 view;"
 	"uniform mat4 proj;"
-	// "varying vec4 vertexColor;"
 	"void main() {"
-	// "	vertexColor = gl_Color;"
 	"   gl_Position = proj * view * model * vec4(position, 1.0);"
 	"}";
 
 const GLchar* fragmentSource =
-	"#version 150 core\n"
-	// "in vec3 normal;"
+	"#version 330 core\n"
+	"in vec3 normal;"
 	"out vec4 outColor;"
-	// "varying vec4 vertexColor;"
 	"void main() {"
 	"   outColor = vec4(0.0, 0.5, 1.0, 1.0);"
-	// "	outColor = vertexColor;"
+	// "   vec3 surfaceColor = vec3(0.0, 0.5, 1.0, 1.0);"
 	// "	vec3 lightColor = vec4(1.0, 1.0, 1.0);"
 	// "	float cosTheta = clamp(dot(normal, 1), 0, 1);"
-	// "	outColor = surfaceColor * lightColor * cosTheta;"
+	// "	outColor = vec4(surfaceColor * lightColor * cosTheta, 1.0);"
 	"}";
 
 struct  DirectionalLight {
@@ -112,8 +109,13 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// Check Shader Complilation
 	GLint compiled;
 	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &compiled);
-	if (!compiled) {
-		fprintf(stderr, "Failed to compile vertex shader\n");
+	if (compiled != GL_TRUE) {
+		fprintf(stderr, "Error compiling vertex shader\n");
+
+		GLsizei log_length = 0;
+		GLchar message[1024];
+		glGetShaderInfoLog(vertexShader, 1024, &log_length, message);
+		fprintf(stderr, "%s", message);
 
 		glDeleteShader(vertexShader);
 		glDeleteBuffers(1, &model_ebo);
@@ -123,8 +125,13 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 		return -1;
 	}
 	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &compiled);
-	if (!compiled) {
-		fprintf(stderr, "Failed to compile fragment shader\n");
+	if (compiled != GL_TRUE) {
+		fprintf(stderr, "Error compiling fragment shader\n");
+
+		GLsizei log_length = 0;
+		GLchar message[1024];
+		glGetShaderInfoLog(fragmentShader, 1024, &log_length, message);
+		fprintf(stderr, "%s", message);
 
 		glDeleteShader(fragmentShader);
 		glDeleteShader(vertexShader);
@@ -145,8 +152,13 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// Confirm Linking and Use Program
 	GLint linked;
 	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linked);
-	if (!linked) {
-		fprintf(stderr, "Failed to link shaders\n");
+	if (linked != GL_TRUE) {
+		fprintf(stderr, "Error linking shader program\n");
+
+		GLsizei log_length = 0;
+		GLchar message[1024];
+		glGetShaderInfoLog(shaderProgram, 1024, &log_length, message);
+		fprintf(stderr, "%s", message);
 
 		glDeleteProgram(shaderProgram);
 		glDeleteShader(fragmentShader);
@@ -162,7 +174,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// Specify Layout of Vertex Data
 	GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(posAttrib);
+	glEnableVertexAttribArray(posAttrib);	// Here because attribute is static
 
 
 	// // Generate & Link Normals
@@ -170,16 +182,25 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// glGenBuffers(1, &normals_vbo);
 	// glBindBuffer(GL_ARRAY_BUFFER, normals_vbo);
 	// std::vector<glm::vec3> normals;
-	// for (int i = 0; i < faces.size(); i += 3) {
-	// 	glm::vec3 normal = glm::cross(
-	// 		vertices[faces[i+1]] - vertices[faces[i]],
-	// 		vertices[faces[i+2]] - vertices[faces[i]]
-	// 	).gml::normalize();
+	// glm::vec3 x;
+	// glm::vec3 y;
+	// for (int i = 0; i < numFaces; i += 3) {
+	// 	x = glm::vec3(
+	// 		vertices[faces[i+1] * 3] - vertices[faces[i] * 3],
+	// 		vertices[faces[i+1] * 3 + 1] - vertices[faces[i] * 3 + 1],
+	// 		vertices[faces[i+1] * 3 + 2] - vertices[faces[i] * 3 + 2]
+	// 	);
+	// 	y = glm::vec3(
+	// 		vertices[faces[i+2] * 3] - vertices[faces[i] * 3],
+	// 		vertices[faces[i+2] * 3 + 1] - vertices[faces[i] * 3 + 1],
+	// 		vertices[faces[i+2] * 3 + 2] - vertices[faces[i] * 3 + 2]
+	// 	);
+	// 	glm::vec3 normal = glm::normalize(glm::cross(x,y));
 	// 	normals.push_back(normal);
 	// }
-	// glBufferData(GL_ARRAY_BUFFER, normals.size * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+	// glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 	// GLint normalsAttrib = glGetAttribLocation(shaderProgram, "normal");
-	// glVertexAttribPointer(normalsAttrib, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	// glVertexAttribPointer(normalsAttrib, 3, GL_FLOAT, GL_TRUE, 0, 0);
 	// glEnableVertexAttribArray(normalsAttrib);
 
 	// Background Color
@@ -246,6 +267,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 
 
 	// Deallocate
+	// glDisableVertexAttribArray(normalsAttrib);
 	glDisableVertexAttribArray(posAttrib);
 
 	glDeleteProgram(shaderProgram);
