@@ -3,6 +3,7 @@
  * - http://www.opengl-tutorial.org/ (some bits don't work or just aren't explained well)
  * - http://mbsoftworks.sk/index.php?page=tutorials&series=1 (Haven't looked at it much, but has some cool topics)
  * - https://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/index.php (to understand shaders and GLSL, but some of the syntax is out of date)
+ * - http://www.learnopengl.com/
  */
 
 #include <stdlib.h>
@@ -48,6 +49,8 @@ struct  DirectionalLight {
 	float ambientIntensity;
 } sunlight;
 
+bool showWireframe = false;
+
 int render(const char* title, uint numVertices, float* vertices, uint numFaces, int* faces) {
 	if (!glfwInit()) {
 		fprintf(stderr, "Failed to initialize GLFW\n");
@@ -62,7 +65,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 
 	GLFWwindow* window;
 	window = glfwCreateWindow(640, 480, title, NULL, NULL);
-	if (window == NULL) {
+	if (!window) {
 		fprintf(stderr, "Failed to open GLFW window.  If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		glfwTerminate();
 		return -1;
@@ -240,10 +243,18 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 
-
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	do {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			showWireframe = !showWireframe;
+			if (showWireframe) {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			} else {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+		}
 
 		// Model transforms
 		glm::mat4 model;
@@ -255,10 +266,10 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 		GLuint uniModel = glGetUniformLocation(shaderProgram, "model");
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 
-		// draw element(s)
+
 		glDrawElements(GL_TRIANGLES, numFaces, GL_UNSIGNED_INT, 0);
 
-		// swap buffers
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	} while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS
@@ -279,5 +290,6 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 
 	glDeleteVertexArrays(1, &vao);
 
+	glfwTerminate();
 	return 0;
 }
