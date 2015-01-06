@@ -49,7 +49,137 @@ struct  DirectionalLight {
 	float ambientIntensity;
 } sunlight;
 
+GLuint width = 640;
+GLuint height = 480;
 bool showWireframe = false;
+bool firstMouse = true;
+GLfloat lastX = width / 2;
+GLfloat lastY = height / 2; 
+
+enum CameraMovement {
+	FORWARD,
+	BACKWARD,
+	LEFT,
+	RIGHT
+};
+
+class Camera {
+	public:
+		glm::vec3 position;
+		glm::vec3 front;
+		glm::vec3 up;
+		glm::vec3 right;
+		glm::vec3 worldUp;
+
+		GLfloat yaw;
+		GLfloat pitch;
+
+		GLfloat movementSpeed;
+		GLfloat mouseSensitivity;
+		GLfloat zoom;
+
+		Camera(GLuint viewportWidth, GLuint viewportHeight, glm::vec3 position = glm::vec3(0.f, 0.f, 0.f), glm::vec3 worldUp = glm::vec3(0.f, 1.f, 0.f), GLfloat yaw = -90.f, GLfloat pitch = 0.f){
+			this->viewportWidth = viewportWidth;
+			this->viewportHeight = viewportHeight;
+			this->position = position;
+			this->worldUp = worldUp;
+			this->yaw = yaw;
+			this->pitch = pitch;
+			this->movementSpeed = 0.05f;
+			this->mouseSensitivity = 0.25f;
+			this->zoom = 45.f;
+			this->updateCameraVectors();
+		}
+
+		// WASD
+		void moveCamera(CameraMovement direction) {
+			if (direction == FORWARD)
+				this->position += this->front * movementSpeed;
+			if (direction == BACKWARD)
+				this->position -= this->front * movementSpeed;
+			if (direction == LEFT)
+				this->position -= this->right * movementSpeed;
+			if (direction == RIGHT)
+				this->position += this->right * movementSpeed;
+		}
+
+		// Mouse cursor
+		void tiltCamera(GLfloat xOffset, GLfloat yOffset, GLboolean constrainPitch = true) {
+			xOffset *= this->mouseSensitivity;
+			yOffset *= this->mouseSensitivity;
+
+			this->yaw 	+= xOffset;
+			this->pitch += yOffset;
+
+			if(constrainPitch) {
+				if (this->pitch > 89.f)
+					this->pitch = 89.f;
+				if (this->pitch < -89.f)
+					this->pitch = -89.f;
+			}
+			this->updateCameraVectors();
+		}
+
+		// Mouse wheel
+		void zoomCamera(GLfloat yOffset) {
+			if (this->zoom >= 1.f && this->zoom <= 45.f)
+				this->zoom -= yOffset;
+			if (this->zoom <= 1.f)
+				this->zoom = 1.f;
+			if (this->zoom >= 45.f)
+				this->zoom = 45.f;
+		}
+
+		glm::mat4 getViewMatrix() {
+			return glm::lookAt(this->position, this->position + this->front, this->worldUp);
+		}
+
+		glm::mat4 getProjMatrix() {
+			return glm::perspective(
+				this->zoom,			// Field of View (in degrees)
+				(GLfloat)viewportWidth / (GLfloat)viewportHeight,		// Aspect ratio (should be widnow width / height)
+				0.01f,				// Near clipping plane
+				1000.f				// Far clipping plane
+			);
+		}
+
+	private:
+		GLuint viewportWidth;
+		GLuint viewportHeight;
+		void updateCameraVectors() {
+			glm::vec3 front;
+			front.x = cos(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+			front.y = sin(glm::radians(this->pitch));
+			front.z = sin(glm::radians(this->yaw)) * cos(glm::radians(this->pitch));
+
+			this->front = glm::normalize(front);
+			this->right = glm::normalize(glm::cross(this->front, this->worldUp));
+			this->up 	= glm::normalize(glm::cross(this->right, this->front));
+		}
+};
+
+
+Camera camera(width, height, glm::vec3(0.f, 0.f, 1.f));
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+	if (firstMouse) {
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	GLfloat xOffset = xpos - lastX;
+	GLfloat yOffset = lastY - ypos;
+
+	lastX = xpos;
+	lastY = ypos;
+
+	camera.tiltCamera(xOffset, yOffset);
+}
+
+void scroll_callback(GLFWwindow* window, double xOffset, double yOffset) {
+	camera.zoomCamera(yOffset);
+}
 
 int render(const char* title, uint numVertices, float* vertices, uint numFaces, int* faces) {
 	if (!glfwInit()) {
@@ -64,7 +194,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	GLFWwindow* window;
-	window = glfwCreateWindow(640, 480, title, NULL, NULL);
+	window = glfwCreateWindow(width, height, title, NULL, NULL);
 	if (!window) {
 		fprintf(stderr, "Failed to open GLFW window.  If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
 		glfwTerminate();
@@ -77,6 +207,9 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		return -1;
 	}
+
+	glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
 
 
@@ -231,22 +364,6 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 
 
-	// View (Initial Camera Properties)
-	glm::vec3 cameraPos = glm::vec3(0.f, 1.2f, 3.f);
-	glm::vec3 cameraTarget = glm::vec3(0.f, 0.f, 0.f);
-	glm::vec3 cameraDir = cameraTarget - cameraPos;
-	glm::vec3 cameraUp 	= glm::vec3(0.f, 1.f, 0.f);
-	glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
-
-	// Projection (Constant)
-	glm::mat4 proj = glm::perspective(
-		45.f,			// Field of View (in degrees)
-		4.f / 3.f,		// Aspect ratio
-		0.01f,			// Near clipping plane
-		1000.f			// Far clipping plane
-	);
-	glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
-
 
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 	do {
@@ -261,25 +378,21 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 			}
 		}
 
-		GLfloat cameraSpeed = 0.05f;
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			cameraPos += cameraDir * cameraSpeed;
+			camera.moveCamera(FORWARD);
 		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			cameraPos -= cameraDir * cameraSpeed;
+			camera.moveCamera(BACKWARD);
 		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+			camera.moveCamera(LEFT);
 		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+			camera.moveCamera(RIGHT);
 
-		// View (Camera)
-		glm::mat4 view = glm::lookAt(
-			cameraPos,
-			cameraTarget,
-			cameraUp
-		);
+
+		// View & Projection (Camera)
+		glm::mat4 view = camera.getViewMatrix();
 		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
-
-
+		glm::mat4 proj = camera.getProjMatrix();
+		glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 		glDrawElements(GL_TRIANGLES, numFaces, GL_UNSIGNED_INT, 0);
 
