@@ -1,9 +1,9 @@
 /* References for understanding OpenGL
+ * - http://www.learnopengl.com/ (Really good)
  * - https://open.gl/ (provides source code)
  * - http://www.opengl-tutorial.org/ (some bits don't work or just aren't explained well)
  * - http://mbsoftworks.sk/index.php?page=tutorials&series=1 (Haven't looked at it much, but has some cool topics)
  * - https://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/index.php (to understand shaders and GLSL, but some of the syntax is out of date)
- * - http://www.learnopengl.com/
  */
 
 #include <stdlib.h>
@@ -221,25 +221,30 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	// glUniformMatrix4fv(uniSunlight, 1, GL_FALSE, glm::value_ptr(sunlight));
 
 
-
-	// Model View Projection
-	// View (Constant)
-	glm::mat4 view = glm::lookAt(
-		glm::vec3(0.f, 1.2f, 3.f),		// camera position
-		glm::vec3(0.f, 0.f, 0.f),		// target
-		glm::vec3(0.f, 1.f, 0.f)		// up
-	);
+	// Model, View, Projection Uniforms
+	GLuint uniModel = glGetUniformLocation(shaderProgram, "model");
 	GLuint uniView = glGetUniformLocation(shaderProgram, "view");
-	glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
+
+	// Model (Constant)
+	glm::mat4 model = glm::mat4();	// Identity matrix
+	glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+
+
+	// View (Initial Camera Properties)
+	glm::vec3 cameraPos = glm::vec3(0.f, 1.2f, 3.f);
+	glm::vec3 cameraTarget = glm::vec3(0.f, 0.f, 0.f);
+	glm::vec3 cameraDir = cameraTarget - cameraPos;
+	glm::vec3 cameraUp 	= glm::vec3(0.f, 1.f, 0.f);
+	glm::vec3 cameraFront = glm::vec3(0.f, 0.f, -1.f);
 
 	// Projection (Constant)
 	glm::mat4 proj = glm::perspective(
 		45.f,			// Field of View (in degrees)
 		4.f / 3.f,		// Aspect ratio
 		0.01f,			// Near clipping plane
-		10.f			// Far clipping plane
+		1000.f			// Far clipping plane
 	);
-	GLint uniProj = glGetUniformLocation(shaderProgram, "proj");
 	glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
 
 
@@ -247,7 +252,7 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 	do {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 			showWireframe = !showWireframe;
 			if (showWireframe) {
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -256,15 +261,24 @@ int render(const char* title, uint numVertices, float* vertices, uint numFaces, 
 			}
 		}
 
-		// Model transforms
-		glm::mat4 model;
-		model = glm::rotate(
-			model,
-			(float)clock() / (float)CLOCKS_PER_SEC * 90.f,
-			glm::vec3(0.f, 1.f, 0.f)
+		GLfloat cameraSpeed = 0.05f;
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+			cameraPos += cameraDir * cameraSpeed;
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+			cameraPos -= cameraDir * cameraSpeed;
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+		// View (Camera)
+		glm::mat4 view = glm::lookAt(
+			cameraPos,
+			cameraTarget,
+			cameraUp
 		);
-		GLuint uniModel = glGetUniformLocation(shaderProgram, "model");
-		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+
 
 
 		glDrawElements(GL_TRIANGLES, numFaces, GL_UNSIGNED_INT, 0);
